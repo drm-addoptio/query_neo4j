@@ -1,0 +1,57 @@
+#    
+name: Deploy to GCP Functions
+
+on:
+  push:
+    branches: [ "main" ]
+
+env:
+  PROJECT_ID: ${{ vars.PROJECT_ID }} # TODO: update Google Cloud project id
+  SERVICE: ${{ vars.SERVICE }} # TODO: update Cloud Functions service name
+  REGION: ${{ vars.REGION }} # TODO: update Cloud Run service region
+
+jobs:
+  deploy:
+    # Add 'id-token' with the intended permissions for workload identity federation
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Google Auth
+        id: auth
+        uses: 'google-github-actions/auth@v2'
+        with:
+          token_format: 'access_token'
+          workload_identity_provider: '${{ secrets.WIF_PROVIDER }}' # e.g. - projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider
+          service_account: '${{ secrets.WIF_SERVICE_ACCOUNT }}' # e.g. - my-service-account@my-project.iam.gserviceaccount.com
+      
+      - name: Deploy to GCP Functions V2
+        id: deploy
+        uses: 'google-github-actions/deploy-cloud-functions@v3'
+        with:
+          name: ${{ vars.SERVICE }}
+          environment: GEN_2
+          runtime: python310
+          entry_point: main
+          memory: 256M
+          service_timeout: 540
+          min_instance_count: 1
+          max_instance_count: 99
+          region: ${{ env.REGION }}
+          project_id: ${{ vars.PROJECT_ID }}
+          secrets: |
+            NEO4J_URI=projects/${{ vars.PROJECT_ID }}/secrets/NEO4J_URI/versions/latest
+            NEO4J_READ_ONLY_USER=projects/${{ vars.PROJECT_ID }}/secrets/NEO4J_USER/versions/latest
+            NEO4J_READ_ONLY_PASSWORD=projects/${{ vars.PROJECT_ID }}/secrets/NEO4J_PASSWORD/versions/latest
+            NEO4J_DB=projects/${{ vars.PROJECT_ID }}/secrets/NEO4J_DB/versions/latest
+          service_account: '${{ secrets.WIF_SERVICE_ACCOUNT }}'
+          
+
+      # If required, use the Cloud Run url output in later steps
+      - name: Show Output
+        run: echo ${{ steps.deploy.outputs.url }}            

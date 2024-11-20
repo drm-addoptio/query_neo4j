@@ -15,7 +15,7 @@ DB = os.getenv('NEO4J_DB')  # Assuming a specific database name if needed
 def main(request):
     # Set CORS headers
     headers = {
-        'Access-Control-Allow-Origin': request.headers.origin,
+        'Access-Control-Allow-Origin': request.headers.get('Origin'),
         'Access-Control-Allow-Methods': 'POST',
         'Access-Control-Allow-Headers': 'Content-Type'
     }

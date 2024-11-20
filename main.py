@@ -4,11 +4,7 @@ from neo4j import GraphDatabase
 from neo4j.exceptions import DriverError, Neo4jError
 from flask import jsonify
 from utils.nvl_result_transformer import nvl_result_transformer
-import logging
-
-# Logger setup
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from logging_config import logger
 
 # Neo4j configuration
 URI = os.getenv('NEO4J_URI')

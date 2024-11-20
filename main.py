@@ -13,17 +13,6 @@ DB = os.getenv('NEO4J_DB')  # Assuming a specific database name if needed
 
 @functions_framework.http
 def main(request):
-    # Set CORS headers
-    headers = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST',
-        'Access-Control-Allow-Headers': 'Content-Type'
-    }
-
-    # Handle OPTIONS preflight requests
-    if request.method == 'OPTIONS':
-        return ('', 204, headers)
-
     try:
         logger.info("Running Cloud Function...")
 
@@ -39,7 +28,7 @@ def main(request):
         logger.info(f"Cypher Query: {cypher_query}")
 
         if not cypher_query:
-            return jsonify({'error': 'Cypher query is required.'}), 400, headers
+            return jsonify({'error': 'Cypher query is required.'}), 400
 
         # Execute the query using the querykb-style approach
         try:
@@ -49,14 +38,14 @@ def main(request):
             json_response = jsonify(nvl_data)
             logger.info(f"Response: {json_response}")
             # Return the transformed data
-            return jsonify(nvl_data), 200, headers
+            return jsonify(nvl_data), 200
         except Exception as e:
             logger.error('Error executing Cypher query:', e)
-            return jsonify({'error': 'Error executing Cypher query.'}), 500, headers
+            return jsonify({'error': 'Error executing Cypher query.'}), 500
 
     except Exception as e:
         logger.error('Error executing Cypher query or fetching credentials:', e)
-        return jsonify({'error': 'Internal server error.'}), 500, headers
+        return jsonify({'error': 'Internal server error.'}), 500
 
 def querykb(cypher: str) -> list:
     try:

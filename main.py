@@ -16,7 +16,7 @@ def main(request):
     # Set CORS headers
     headers = {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST',
+        'Access-Control-Allow-Methods': 'POST',
         'Access-Control-Allow-Headers': 'Content-Type'
     }
 
@@ -34,6 +34,7 @@ def main(request):
         # Get the Cypher query from the request body
         request_json = request.get_json()
         logger.info(f"Request JSON: {request_json}")
+        logger.info(f"Request Headers: {request.headers}")
         cypher_query = request_json.get('query') if request_json else None
         logger.info(f"Cypher Query: {cypher_query}")
 

@@ -8,8 +8,6 @@ def convert_to_serializable(value):
     return value
 
 def record_mapper(record):
-    print("record:", record)
-    
     elements = []
     for key in record.keys():
         element = record.get(key)

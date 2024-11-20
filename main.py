@@ -33,6 +33,7 @@ def main(request):
 
         # Get the Cypher query from the request body
         request_json = request.get_json()
+        logger.info(f"Request JSON: {request_json}")
         cypher_query = request_json.get('query') if request_json else None
         logger.info(f"Cypher Query: {cypher_query}")
 
@@ -44,7 +45,6 @@ def main(request):
             result_data = querykb(cypher_query)
             nvl_data = nvl_result_transformer(result_data)
             logger.info(f"Transformed data: {nvl_data}")
-            logger.info("Cypher query executed successfully.")
             json_response = jsonify(nvl_data)
             logger.info(f"Response: {json_response}")
             # Return the transformed data
@@ -69,7 +69,6 @@ def querykb(cypher: str) -> list:
                 database_=DB,
                 impersonated_user_="user1212"
             )
-            print(f"summary: {summary}")
             
             # Handle any notifications or warnings
             if summary.notifications and len(summary.notifications) > 0:

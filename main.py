@@ -37,7 +37,7 @@ def add_tenant_condition(cypher_query, tenant_id):
             match_position = cypher_query.upper().find("MATCH")
             if match_position != -1:
                 cypher_query = cypher_query[:match_position + len("MATCH")] + \
-                               f" (n:User) WHERE tenant_id = '{tenant_id}' " + \
+                               f" WHERE tenant_id = '{tenant_id}' " + \
                                cypher_query[match_position + len("MATCH"):]
     return cypher_query
 

@@ -11,9 +11,40 @@ URI = os.getenv('NEO4J_URI')
 AUTH = (os.getenv('NEO4J_READ_ONLY_USER'), os.getenv('NEO4J_READ_ONLY_PASSWORD'))
 DB = os.getenv('NEO4J_DB')  # Assuming a specific database name if needed
 
+def add_tenant_condition(cypher_query, tenant_id):
+    """
+    Add the tenant_id condition to the Cypher query at the correct position.
+
+    This function adds the condition `WHERE tenant_id = '...'` to the query.
+    If the query already has a WHERE clause, it will append it properly using 'AND'.
+    If there is no WHERE clause, it will insert it after the MATCH clause.
+    """
+    cypher_query = cypher_query.strip()  # Strip any surrounding whitespace
+
+    # If the query contains an existing WHERE clause
+    if "WHERE" in cypher_query.upper():
+        # Check where to insert: after the WHERE clause
+        position_where = cypher_query.upper().find("WHERE")
+        # Append the tenant condition after the last condition in the WHERE clause
+        # Remove possible parentheses for subqueries and add the condition
+        cypher_query = cypher_query[:position_where + len("WHERE")] + \
+                       " " + f"tenant_id = '{tenant_id}'" + \
+                       cypher_query[position_where + len("WHERE") + 1:]
+    else:
+        # Case 2: No WHERE clause found, place after MATCH or similar clauses
+        if "MATCH" in cypher_query.upper() or "OPTIONAL MATCH" in cypher_query.upper():
+            # Find the correct position to add WHERE after MATCH
+            match_position = cypher_query.upper().find("MATCH")
+            if match_position != -1:
+                cypher_query = cypher_query[:match_position + len("MATCH")] + \
+                               f" (n:User) WHERE tenant_id = '{tenant_id}' " + \
+                               cypher_query[match_position + len("MATCH"):]
+    return cypher_query
+
 @functions_framework.http
 def main(request):
     # Set CORS headers
+    # This is important for browser clients. If not present we will receive cors errors on the browser
     headers = {
         'Access-Control-Allow-Origin': request.headers.get('Origin'),
         'Access-Control-Allow-Credentials': 'true',
@@ -35,16 +66,32 @@ def main(request):
         # Get the Cypher query from the request body
         request_json = request.get_json()
         logger.info(f"Request JSON: {request_json}")
-        logger.info(f"Request Headers: {request.headers}")
         cypher_query = request_json.get('query') if request_json else None
         logger.info(f"Cypher Query: {cypher_query}")
 
+        # Get the supabase user email from the request header "x-supabase-user"
+        user = request.headers.get('x-supabase-user')
+        logger.info(f"User: {user}")
+
+        # Get the active tenant id from the request header "x-active-tenant-id"
+        active_tenant_id = request.headers.get('x-active-tenant-id')
+        logger.info(f"active_tenant_id: {active_tenant_id}")
+
         if not cypher_query:
             return jsonify({'error': 'Cypher query is required.'}), 400, headers
+        
+        if not user:
+            return jsonify({'error': 'User is required.'}), 400, headers
+        
+        if not active_tenant_id:
+            return jsonify({'error': 'Active tenant id is required.'}), 400, headers
+
+        cypher_query = add_tenant_condition(cypher_query, active_tenant_id)
+        logger.info(f"Updated Cypher Query: {cypher_query}")
 
         # Execute the query using the querykb-style approach
         try:
-            result_data = querykb(cypher_query)
+            result_data = querykb(cypher_query, user, active_tenant_id)
             nvl_data = nvl_result_transformer(result_data)
             logger.info(f"Transformed data: {nvl_data}")
             json_response = jsonify(nvl_data)
@@ -59,7 +106,8 @@ def main(request):
         logger.error('Error executing Cypher query or fetching credentials:', e)
         return jsonify({'error': 'Internal server error.'}), 500, headers
 
-def querykb(cypher: str) -> list:
+
+def querykb(cypher: str, user: str, active_tenant_id: str) -> list:
     try:
         with GraphDatabase.driver(uri=URI, auth=AUTH, warn_notification_severity="WARNING") as driver:
             driver.verify_connectivity()
@@ -69,7 +117,7 @@ def querykb(cypher: str) -> list:
             records, summary, keys = driver.execute_query(
                 cypher,
                 database_=DB,
-                impersonated_user_="user1212"
+                impersonated_user_=user
             )
             
             # Handle any notifications or warnings

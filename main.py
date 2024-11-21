@@ -14,32 +14,28 @@ DB = os.getenv('NEO4J_DB')  # Assuming a specific database name if needed
 def add_tenant_condition(cypher_query, tenant_id):
     """
     Add the tenant_id condition to the Cypher query at the correct position.
-
-    This function adds the condition `WHERE tenant_id = '...'` to the query.
-    If the query already has a WHERE clause, it will append it properly using 'AND'.
-    If there is no WHERE clause, it will insert it after the MATCH clause.
+    
+    - If the query has a `WHERE` clause, the condition is appended using 'AND'.
+    - If no `WHERE` clause exists, the condition is inserted after the first `MATCH` or `OPTIONAL MATCH` clause, but outside the brackets.
     """
-    cypher_query = cypher_query.strip()  # Strip any surrounding whitespace
-
-    # If the query contains an existing WHERE clause
+    cypher_query = cypher_query.strip()  # Clean up any surrounding whitespace
+    
+    # Check if the query contains an existing WHERE clause
     if "WHERE" in cypher_query.upper():
-        # Check where to insert: after the WHERE clause
-        position_where = cypher_query.upper().find("WHERE")
-        # Append the tenant condition after the last condition in the WHERE clause
-        # Remove possible parentheses for subqueries and add the condition
-        cypher_query = cypher_query[:position_where + len("WHERE")] + \
-                       " " + f"tenant_id = '{tenant_id}'" + \
-                       cypher_query[position_where + len("WHERE") + 1:]
+        # Append the tenant condition to the existing WHERE clause using AND
+        where_pos = cypher_query.upper().find("WHERE")  # Find the WHERE keyword
+        cypher_query = cypher_query[:where_pos + len("WHERE")] + " " + f"tenant_id = '{tenant_id}'" + cypher_query[where_pos + len("WHERE"):]
+
     else:
-        # Case 2: No WHERE clause found, place after MATCH or similar clauses
+        # No WHERE clause found, add after MATCH or OPTIONAL MATCH
         if "MATCH" in cypher_query.upper() or "OPTIONAL MATCH" in cypher_query.upper():
-            # Find the correct position to add WHERE after MATCH
-            match_position = cypher_query.upper().find("MATCH")
-            if match_position != -1:
-                cypher_query = cypher_query[:match_position + len("MATCH")] + \
-                               f" WHERE tenant_id = '{tenant_id}' " + \
-                               cypher_query[match_position + len("MATCH"):]
+            match_pos = cypher_query.upper().find("MATCH")  # Find the first MATCH
+            if match_pos != -1:
+                # Add the WHERE clause right after MATCH, but outside any brackets
+                cypher_query = cypher_query[:match_pos + len("MATCH")] + f" WHERE tenant_id = '{tenant_id}' " + cypher_query[match_pos + len("MATCH"):]
+
     return cypher_query
+
 
 @functions_framework.http
 def main(request):

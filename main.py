@@ -11,30 +11,34 @@ URI = os.getenv('NEO4J_URI')
 AUTH = (os.getenv('NEO4J_READ_ONLY_USER'), os.getenv('NEO4J_READ_ONLY_PASSWORD'))
 DB = os.getenv('NEO4J_DB')  # Assuming a specific database name if needed
 
-def add_tenant_condition(cypher_query, tenant_id):
+def add_tenant_label_to_match(cypher_query, tenant_id):
     """
-    Add the tenant_id condition to the Cypher query at the correct position.
+    Add the tenant_id as a second label to all nodes in the MATCH clause.
     
-    - If the query has a `WHERE` clause, the condition is appended using 'AND'.
-    - If no `WHERE` clause exists, the condition is inserted after the first `MATCH` or `OPTIONAL MATCH` clause, but outside the brackets.
+    - Each node will be matched with its original label and the tenant label.
+    - The tenant label is dynamically generated as 't{tenant_id}' (e.g., 't12').
     """
-    cypher_query = cypher_query.strip()  # Clean up any surrounding whitespace
+    tenant_label = f"t{tenant_id}"  # e.g., 't12' for tenant_id = 12
     
-    # Check if the query contains an existing WHERE clause
-    if "WHERE" in cypher_query.upper():
-        # Append the tenant condition to the existing WHERE clause using AND
-        where_pos = cypher_query.upper().find("WHERE")  # Find the WHERE keyword
-        cypher_query = cypher_query[:where_pos + len("WHERE")] + " " + f"tenant_id = '{tenant_id}'" + cypher_query[where_pos + len("WHERE"):]
+    # Split the query by lines for easier processing
+    query_lines = cypher_query.splitlines()
+    
+    modified_query = []
+    
+    for line in query_lines:
+        # Look for MATCH clauses and modify the nodes being matched
+        if "MATCH" in line.upper():
+            # We want to add the tenant label after each node label
+            modified_line = line
+            # For each node label in the MATCH clause, add the tenant label
+            modified_line = modified_line.replace(")", f":{tenant_label})")
+            modified_query.append(modified_line)
+        else:
+            # Leave other lines unchanged
+            modified_query.append(line)
+    
+    return "\n".join(modified_query)
 
-    else:
-        # No WHERE clause found, add after MATCH or OPTIONAL MATCH
-        if "MATCH" in cypher_query.upper() or "OPTIONAL MATCH" in cypher_query.upper():
-            match_pos = cypher_query.upper().find("MATCH")  # Find the first MATCH
-            if match_pos != -1:
-                # Add the WHERE clause right after MATCH, but outside any brackets
-                cypher_query = cypher_query[:match_pos + len("MATCH")] + f" WHERE tenant_id = '{tenant_id}' " + cypher_query[match_pos + len("MATCH"):]
-
-    return cypher_query
 
 
 @functions_framework.http
@@ -82,7 +86,7 @@ def main(request):
         if not active_tenant_id:
             return jsonify({'error': 'Active tenant id is required.'}), 400, headers
 
-        cypher_query = add_tenant_condition(cypher_query, active_tenant_id)
+        cypher_query = add_tenant_label_to_match(cypher_query, active_tenant_id)
         logger.info(f"Updated Cypher Query: {cypher_query}")
 
         # Execute the query using the querykb-style approach

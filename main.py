@@ -50,10 +50,6 @@ def add_tenant_conditions_to_query(cypher_query, tenant_id):
     return modified_query
 
 
-
-
-
-
 @functions_framework.http
 def main(request):
     # Set CORS headers
@@ -138,8 +134,8 @@ def querykb(cypher: str, user: str) -> list:
             )
             
             # Handle any notifications or warnings
-            if summary.notifications and len(summary.notifications) > 0:
-                raise Neo4jError(summary.notifications[0], cypher)
+            #if summary.notifications and len(summary.notifications) > 0:
+            #    raise Neo4jError(summary.notifications[0], cypher)
 
             logger.info(f"Query completed in {summary.result_available_after} ms")
             logger.info(f"Results: {records}")

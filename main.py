@@ -11,33 +11,48 @@ URI = os.getenv('NEO4J_URI')
 AUTH = (os.getenv('NEO4J_READ_ONLY_USER'), os.getenv('NEO4J_READ_ONLY_PASSWORD'))
 DB = os.getenv('NEO4J_DB')  # Assuming a specific database name if needed
 
-def add_tenant_label_to_match(cypher_query, tenant_id):
+def add_tenant_conditions_to_query(cypher_query, tenant_id):
     """
-    Add the tenant_id as a second label to all nodes in the MATCH clause.
-    
-    - Each node will be matched with its original label and the tenant label.
-    - The tenant label is dynamically generated as 't{tenant_id}' (e.g., 't12').
+    Modify the query to add tenant-specific conditions to the first node in the first MATCH clause.
+    Handles cases where the node has no labels, existing labels, or complex MATCH patterns.
     """
-    tenant_label = f"t{tenant_id}"  # e.g., 't12' for tenant_id = 12
-    
-    # Split the query by lines for easier processing
+    tenant_condition = f"n:t{tenant_id} OR n:allAccess"
     query_lines = cypher_query.splitlines()
-    
     modified_query = []
-    
+    first_match = True
+
     for line in query_lines:
-        # Look for MATCH clauses and modify the nodes being matched
-        if "MATCH" in line.upper():
-            # We want to add the tenant label after each node label
-            modified_line = line
-            # For each node label in the MATCH clause, add the tenant label
-            modified_line = modified_line.replace(")", f":{tenant_label})")
-            modified_query.append(modified_line)
+        if "MATCH" in line.upper() and first_match:
+            # Find the first node in the MATCH clause
+            match_start = line.find("(")
+            match_end = line.find(")", match_start)
+            
+            if match_start != -1 and match_end != -1:
+                # Extract the node definition
+                node_definition = line[match_start + 1:match_end]
+                
+                # Check if the node already has labels
+                if ":" in node_definition:
+                    # Append the tenant condition to existing labels
+                    modified_node = node_definition + f" WHERE {tenant_condition}"
+                else:
+                    # Add the tenant condition as the first label
+                    modified_node = node_definition + f" WHERE {tenant_condition}"
+                
+                # Replace the node definition back into the line
+                modified_line = line[:match_start + 1] + modified_node + line[match_end:]
+                modified_query.append(modified_line)
+            else:
+                # If no valid node pattern is found, leave the line unchanged
+                modified_query.append(line)
+            
+            first_match = False  # Only modify the first MATCH clause
         else:
             # Leave other lines unchanged
             modified_query.append(line)
     
     return "\n".join(modified_query)
+
 
 
 
@@ -86,7 +101,7 @@ def main(request):
         if not active_tenant_id:
             return jsonify({'error': 'Active tenant id is required.'}), 400, headers
 
-        cypher_query = add_tenant_label_to_match(cypher_query, active_tenant_id)
+        cypher_query = add_tenant_conditions_to_query(cypher_query, active_tenant_id)
         logger.info(f"Updated Cypher Query: {cypher_query}")
 
         # Execute the query using the querykb-style approach

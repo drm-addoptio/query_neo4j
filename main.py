@@ -19,33 +19,40 @@ def generate_neo4j_username(email):
 
 import re
 
+import re
+
 def add_tenant_conditions_to_query(cypher_query, tenant_id):
     """
-    Modify the query to add tenant-specific conditions to the first node in the first MATCH clause.
-    Handles unlabeled or labeled nodes dynamically and ensures valid Cypher syntax.
+    Add tenant-specific label conditions (`t{tenant_id}` or `allAccess`) to the first MATCH clause in a Cypher query.
     """
-    tenant_condition = f"({{node_id}}:t{tenant_id} OR {{node_id}}:allAccess)"
-    modified_query = cypher_query
-    first_match_pattern = r"MATCH\s*\((\w+)(:[^\s\)]*)?\)"  # Regex to match the first node in MATCH
-    
+    tenant_condition_template = "({node_id}:t{tenant_id} OR {node_id}:allAccess)"
+    tenant_condition = tenant_condition_template.replace("{tenant_id}", str(tenant_id))
+
+    # Regex to locate the first MATCH clause and extract the first node identifier
+    first_match_pattern = r"MATCH\s*\((\w+)(:[^\s\)]*)?\)"  # Match `(n)` or `(n:Label)`
+
     match = re.search(first_match_pattern, cypher_query, re.IGNORECASE)
-    
-    if match:
-        node_identifier = match.group(1)  # Extract node identifier (e.g., `n`, `ri`, `a`, etc.)
-        existing_labels = match.group(2) or ""  # Extract existing labels if any (e.g., `:Person`)
-        
-        # Add tenant conditions to the node's labels
-        if existing_labels:
-            modified_labels = f"{existing_labels} WHERE {tenant_condition.replace('{{node_id}}', node_identifier)}"
-        else:
-            modified_labels = f" WHERE {tenant_condition.replace('{{node_id}}', node_identifier)}"
-        
-        # Replace the original match clause
-        original_clause = match.group(0)
-        modified_clause = f"MATCH ({node_identifier}{modified_labels})"
-        modified_query = cypher_query.replace(original_clause, modified_clause, 1)
-    
+    if not match:
+        return cypher_query  # If no MATCH clause is found, return the query unchanged
+
+    node_id = match.group(1)  # Extract node identifier, e.g., `n`, `ri`, etc.
+    existing_labels = match.group(2) or ""  # Existing labels, if any, e.g., `:Label`
+
+    # Create the tenant condition using the extracted node identifier
+    tenant_condition_final = tenant_condition.replace("{node_id}", node_id)
+
+    # If the node already has labels, insert `WHERE` after the labels
+    if existing_labels:
+        modified_clause = f"MATCH ({node_id}{existing_labels} WHERE {tenant_condition_final})"
+    else:
+        modified_clause = f"MATCH ({node_id} WHERE {tenant_condition_final})"
+
+    # Replace the original MATCH clause with the modified one
+    original_clause = match.group(0)
+    modified_query = cypher_query.replace(original_clause, modified_clause, 1)
+
     return modified_query
+
 
 
 

@@ -17,10 +17,6 @@ def generate_neo4j_username(email):
     username = re.sub(r'[^a-zA-Z0-9]', '_', email)
     return username
 
-import re
-
-import re
-
 def add_tenant_conditions_to_query(cypher_query, tenant_id):
     """
     Add tenant-specific label conditions (`t{tenant_id}` or `allAccess`) to the first MATCH clause in a Cypher query.

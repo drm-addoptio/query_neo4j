@@ -17,12 +17,14 @@ def generate_neo4j_username(email):
     username = re.sub(r'[^a-zA-Z0-9]', '_', email)
     return username
 
+import re
+
 def add_tenant_conditions_to_query(cypher_query, tenant_id):
     """
     Modify the query to add tenant-specific conditions to the first node in the first MATCH clause.
-    Dynamically identifies the node identifier and handles unlabeled or labeled nodes.
+    Handles unlabeled or labeled nodes dynamically and ensures valid Cypher syntax.
     """
-    tenant_condition = f":t{tenant_id} OR :allAccess"
+    tenant_condition = f"({{node_id}}:t{tenant_id} OR {{node_id}}:allAccess)"
     modified_query = cypher_query
     first_match_pattern = r"MATCH\s*\((\w+)(:[^\s\)]*)?\)"  # Regex to match the first node in MATCH
     
@@ -34,9 +36,9 @@ def add_tenant_conditions_to_query(cypher_query, tenant_id):
         
         # Add tenant conditions to the node's labels
         if existing_labels:
-            modified_labels = f"{existing_labels} WHERE {node_identifier}{tenant_condition}"
+            modified_labels = f"{existing_labels} WHERE {tenant_condition.replace('{{node_id}}', node_identifier)}"
         else:
-            modified_labels = f" WHERE {node_identifier}{tenant_condition}"
+            modified_labels = f" WHERE {tenant_condition.replace('{{node_id}}', node_identifier)}"
         
         # Replace the original match clause
         original_clause = match.group(0)
@@ -44,6 +46,7 @@ def add_tenant_conditions_to_query(cypher_query, tenant_id):
         modified_query = cypher_query.replace(original_clause, modified_clause, 1)
     
     return modified_query
+
 
 
 

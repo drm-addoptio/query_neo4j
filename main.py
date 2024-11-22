@@ -116,7 +116,7 @@ def main(request):
 
         # Execute the query using the querykb-style approach
         try:
-            result_data = querykb(cypher_query, user, active_tenant_id)
+            result_data = querykb(cypher_query, user)
             nvl_data = nvl_result_transformer(result_data)
             logger.info(f"Transformed data: {nvl_data}")
             json_response = jsonify(nvl_data)

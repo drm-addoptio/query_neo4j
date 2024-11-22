@@ -19,9 +19,9 @@ def generate_neo4j_username(email):
 
 def add_tenant_conditions_to_query(cypher_query, tenant_id):
     """
-    Add tenant-specific label conditions (`t{tenant_id}` or `allAccess`) to the first MATCH clause in a Cypher query.
+    Add tenant-specific label conditions (`d{tenant_id}` or `allAccess`) to the first MATCH clause in a Cypher query.
     """
-    tenant_condition_template = "({node_id}:t{tenant_id} OR {node_id}:allAccess)"
+    tenant_condition_template = "({node_id}:d{tenant_id} OR {node_id}:allAccess)"
     tenant_condition = tenant_condition_template.replace("{tenant_id}", str(tenant_id))
 
     # Regex to locate the first MATCH clause and extract the first node identifier

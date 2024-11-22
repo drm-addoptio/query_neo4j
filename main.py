@@ -1,4 +1,5 @@
 import os
+import re
 import functions_framework
 from neo4j import GraphDatabase
 from neo4j.exceptions import DriverError, Neo4jError
@@ -10,6 +11,11 @@ from logging_config import logger
 URI = os.getenv('NEO4J_URI')
 AUTH = (os.getenv('NEO4J_READ_ONLY_USER'), os.getenv('NEO4J_READ_ONLY_PASSWORD'))
 DB = os.getenv('NEO4J_DB')  # Assuming a specific database name if needed
+
+def generate_neo4j_username(email):
+    # Replace special characters with underscores
+    username = re.sub(r'[^a-zA-Z0-9]', '_', email)
+    return username
 
 def add_tenant_conditions_to_query(cypher_query, tenant_id):
     """
@@ -101,6 +107,10 @@ def main(request):
         if not active_tenant_id:
             return jsonify({'error': 'Active tenant id is required.'}), 400, headers
 
+        user = generate_neo4j_username(user)
+        logger.info(f"Transformed email to neo4j username: {user}")
+
+        # Add tenant-specific conditions to the Cypher query
         cypher_query = add_tenant_conditions_to_query(cypher_query, active_tenant_id)
         logger.info(f"Updated Cypher Query: {cypher_query}")
 
@@ -122,7 +132,7 @@ def main(request):
         return jsonify({'error': 'Internal server error.'}), 500, headers
 
 
-def querykb(cypher: str, user: str, active_tenant_id: str) -> list:
+def querykb(cypher: str, user: str) -> list:
     try:
         with GraphDatabase.driver(uri=URI, auth=AUTH, warn_notification_severity="WARNING") as driver:
             driver.verify_connectivity()

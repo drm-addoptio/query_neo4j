@@ -12,6 +12,10 @@ URI = os.getenv('NEO4J_URI')
 AUTH = (os.getenv('NEO4J_READ_ONLY_USER'), os.getenv('NEO4J_READ_ONLY_PASSWORD'))
 DB = os.getenv('NEO4J_DB')  # Assuming a specific database name if needed
 
+# Initialize Neo4j driver
+driver = GraphDatabase.driver(uri=URI, auth=AUTH, database=DB)
+
+
 def generate_neo4j_username(email):
     # Replace special characters with underscores
     username = re.sub(r'[^a-zA-Z0-9]', '_', email)
@@ -99,8 +103,10 @@ def main(request):
         logger.info(f"Transformed email to neo4j username: {user}")
 
         # Add tenant-specific conditions to the Cypher query
-        cypher_query = add_tenant_conditions_to_query(cypher_query, active_tenant_id)
-        logger.info(f"Updated Cypher Query: {cypher_query}")
+        # Check if the tenant label exists
+        if tenant_label_exists(f"d{active_tenant_id}"):
+          cypher_query = add_tenant_conditions_to_query(cypher_query, active_tenant_id)
+        logger.info(f"Cypher Query: {cypher_query}")
 
         # Execute the query using the querykb-style approach
         try:
@@ -119,24 +125,31 @@ def main(request):
         logger.error('Error executing Cypher query or fetching credentials:', e)
         return jsonify({'error': 'Internal server error.'}), 500, headers
 
+def tenant_label_exists(tenant_label):
+    """
+    Check if the tenant-specific label exists in the database.
+    """
+
+    query = "CALL db.labels() YIELD label RETURN label"
+    with driver.session() as session:
+      labels = session.run(query)
+      return tenant_label in [record["label"] for record in labels]
 
 def querykb(cypher: str, user: str) -> list:
     try:
-        with GraphDatabase.driver(uri=URI, auth=AUTH, warn_notification_severity="OFF") as driver:
-            driver.verify_connectivity()
+        # Use the globally initialized driver
+        with driver.session() as session:
             logger.info(f"Start querying Neo4j with: {cypher}")
 
             # Execute the Cypher query
-            records, summary, keys = driver.execute_query(
-                cypher,
-                database_=DB,
-                impersonated_user_=user
-            )
+            result = session.run(cypher, database=DB, impersonated_user=user)
+            records = [record for record in result]
             
-            logger.info(f"Query completed in {summary.result_available_after} ms")
+            # Logging the query completion time and results
+            logger.info(f"Query completed. Retrieved {len(records)} records.")
             logger.info(f"Results: {records}")
 
-            # Return records in a format suitable for transformation
+            # Return the records
             return records
 
     except (DriverError, Neo4jError) as e:

@@ -122,7 +122,7 @@ def main(request):
 
 def querykb(cypher: str, user: str) -> list:
     try:
-        with GraphDatabase.driver(uri=URI, auth=AUTH) as driver:
+        with GraphDatabase.driver(uri=URI, auth=AUTH, NotificationMinimumSeverity="OFF") as driver:
             driver.verify_connectivity()
             logger.info(f"Start querying Neo4j with: {cypher}")
 

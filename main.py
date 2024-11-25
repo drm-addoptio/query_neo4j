@@ -122,7 +122,7 @@ def main(request):
 
 def querykb(cypher: str, user: str) -> list:
     try:
-        with GraphDatabase.driver(uri=URI, auth=AUTH, warn_notification_severity="WARNING") as driver:
+        with GraphDatabase.driver(uri=URI, auth=AUTH) as driver:
             driver.verify_connectivity()
             logger.info(f"Start querying Neo4j with: {cypher}")
 
@@ -133,10 +133,6 @@ def querykb(cypher: str, user: str) -> list:
                 impersonated_user_=user
             )
             
-            # Handle any notifications or warnings
-            #if summary.notifications and len(summary.notifications) > 0:
-            #    raise Neo4jError(summary.notifications[0], cypher)
-
             logger.info(f"Query completed in {summary.result_available_after} ms")
             logger.info(f"Results: {records}")
 

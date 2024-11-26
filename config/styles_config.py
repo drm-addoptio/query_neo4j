@@ -19,6 +19,72 @@ label_style_config = {
         "styles": ["bold"],
         "size": 25,
         "color": "red"
+    },
+    "AffectedProduct": {
+        "caption": "AffectedProduct",
+        "styles": ["bold"],
+        "size": 25,
+        "color": "violet"
+    },
+    "CPE": {
+        "caption": "CPE",
+        "styles": ["bold"],
+        "size": 15,
+        "color": "black"
+    },
+    "Campaign": {
+        "caption": "Campaign",
+        "styles": ["bold"],
+        "size": 15,
+        "color": "orange"
+    },
+    "Citation": {
+        "caption": "Citation",
+        "styles": ["bold"],
+        "size": 10,
+        "color": "yellow"
+    },
+    "IOC": {
+        "caption": "IOC",
+        "styles": ["bold"],
+        "size": 15,
+        "color": "purple"
+    },
+    "Impact": {
+        "caption": "Impact",
+        "styles": ["bold"],
+        "size": 15,
+        "color": "brown"
+    },
+    "ProblemType": {
+        "caption": "ProblemType",
+        "styles": ["bold"],
+        "size": 15,
+        "color": "turquise"
+    },
+    "Software": {
+        "caption": "Software",
+        "styles": ["bold"],
+        "size": 15,
+        "color": "white"
+    },
+    "Technique": {
+        "caption": "Technique",
+        "styles": ["bold"],
+        "size": 15,
+        "color": "azure"
+    },
+    "IOC": {
+        "caption": "IOC",
+        "styles": ["bold"],
+        "size": 15,
+        "color": "purple"
+    },
+    "Vendor": {
+        "caption": "Vendor",
+        "styles": ["bold"],
+        "size": 15,
+        "color": "blue"
     }
 }
 

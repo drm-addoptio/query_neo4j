@@ -8,90 +8,79 @@ def convert_to_serializable(value):
     return value
 
 def record_mapper(record):
+    # Instead of appending one element at a time, we'll use list comprehensions for efficiency
     print("start mapping ...")
+    
+    # Create the elements list in advance
     elements = []
-    for key in record.keys():
-        print(f"working on key: {key}")
-        element = record.get(key)
-        if (hasattr(element, 'nodes')):
-          print(f"has attribute nodes: {hasattr(element, 'nodes')}")
-          print(f"is instance of tuple or list: {isinstance(element.nodes, (list, tuple))}")
-          print(f"length of nodes: {len(element.nodes)}")
+
+    for key, element in record.items():
+        if element is None:
+            continue  # Skip if the element is None
         
+        # Check if the element has 'nodes' or 'type' and process accordingly
+        is_node = hasattr(element, 'labels')
+        is_relationship_with_nodes = hasattr(element, 'nodes') and isinstance(element.nodes, (list, tuple)) and len(element.nodes) == 2
+        is_relationship_without_nodes = hasattr(element, 'type') and not is_relationship_with_nodes
 
-        # Handle nodes
-        if element is not None:
-          if hasattr(element, 'labels'):
-              print("found node element")
-              # Convert frozenset to list and access the first label
-              labels = list(element.labels)
-              label_config = label_style_config.get(labels[0], {}) if labels else {}
+        if is_node:
+            # Process node elements
+            labels = list(element.labels) if element.labels else []
+            label_config = label_style_config.get(labels[0], {}) if labels else {}
 
-              # Format the node with styles, captions, and other properties
-              node_data = {
-                  "type": "node",
-                  "id": element.element_id,  # Unique ID for each node
-                  "captions": [
-                      {
-                          "value": element.get("classification", labels[0]),
-                          "styles": label_config.get("styles", ["bold"])
-                      }
-                  ],
-                  "size": label_config.get("size", 30),  # Default size if not defined
-                  "color": label_config.get("color", "gray"),  # Default color if not defined
-                  **{k: convert_to_serializable(v) for k, v in element._properties.items()},  # Convert DateTime properties
-                  "labels": labels,  # Keep labels of the node
-              }
-              elements.append(node_data)
-          
-          # Handle relationships with nodes (start_node, end_node)
-          elif hasattr(element, 'nodes') and isinstance(element.nodes, (list, tuple)) and len(element.nodes) == 2:
-              print("relationship with nodes")
-              start_node = element.nodes[0]  # First node in the tuple
-              end_node = element.nodes[1]    # Second node in the tuple
+            node_data = {
+                "type": "node",
+                "id": element.element_id,
+                "captions": [{
+                    "value": element.get("classification", labels[0]),
+                    "styles": label_config.get("styles", ["bold"])
+                }],
+                "size": label_config.get("size", 30),
+                "color": label_config.get("color", "gray"),
+                **{k: convert_to_serializable(v) for k, v in element._properties.items()},
+                "labels": labels,
+            }
+            elements.append(node_data)
 
-              # Retrieve configuration for the relationship type
-              relationship_config = relationship_style_config.get(element.type, {})
+        elif is_relationship_with_nodes:
+            # Process relationship elements with nodes
+            start_node, end_node = element.nodes
 
-              relationship_data = {
-                  "type": "relationship",
-                  "relationshipType": element.type,
-                  "id": element.element_id,
-                  "from": start_node.element_id,
-                  "to": end_node.element_id,
-                  "captions": [
-                      {
-                          "value": relationship_config.get("caption", "missing caption"),
-                          "styles": ["bold"]
-                      }
-                  ],
-                  "color": "gray",  # Default color
-                  **{k: convert_to_serializable(v) for k, v in element._properties.items()},
-              }
-              elements.append(relationship_data)
+            relationship_config = relationship_style_config.get(element.type, {})
 
-          # Handle relationships without 'nodes' (fallback)
-          elif hasattr(element, 'type'):
-              print("relationship without nodes")
-              # Retrieve configuration for the relationship type
-              relationship_config = relationship_style_config.get(element.type, {})
+            relationship_data = {
+                "type": "relationship",
+                "relationshipType": element.type,
+                "id": element.element_id,
+                "from": start_node.element_id,
+                "to": end_node.element_id,
+                "captions": [{
+                    "value": relationship_config.get("caption", "missing caption"),
+                    "styles": ["bold"]
+                }],
+                "color": "gray",
+                **{k: convert_to_serializable(v) for k, v in element._properties.items()},
+            }
+            elements.append(relationship_data)
 
-              # Format the relationship with styles, captions, and other properties
-              relationship_data = {
-                  "type": "relationship",
-                  "relationshipType": element.type,
-                  "id": element.element_id,  # Unique ID for each relationship
-                  "from": element.start_node.id,  # ID of the starting node
-                  "to": element.end_node.id,  # ID of the ending node
-                  "captions": [
-                      {
-                          "value": relationship_config.get("caption", "missing caption"),
-                          "styles": relationship_config.get("styles", ["bold"])
-                      }
-                  ],
-                  "color": relationship_config.get("color", "gray"),  # Default color if not defined
-                  **{k: convert_to_serializable(v) for k, v in element._properties.items()},  # Convert DateTime properties
-              }
-              elements.append(relationship_data)
+        elif is_relationship_without_nodes:
+            # Process relationship elements without nodes
+            relationship_config = relationship_style_config.get(element.type, {})
 
-    return elements  # Return list of formatted nodes and relationships
+            relationship_data = {
+                "type": "relationship",
+                "relationshipType": element.type,
+                "id": element.element_id,
+                "from": element.start_node.id,
+                "to": element.end_node.id,
+                "captions": [{
+                    "value": relationship_config.get("caption", "missing caption"),
+                    "styles": relationship_config.get("styles", ["bold"])
+                }],
+                "color": relationship_config.get("color", "gray"),
+                **{k: convert_to_serializable(v) for k, v in element._properties.items()},
+            }
+            elements.append(relationship_data)
+
+    return elements
+

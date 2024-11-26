@@ -5,85 +5,85 @@ label_style_config = {
     "ResultItem": {
         "caption": "ResultItem",
         "styles": ["bold"],
-        "size": 30,
+        "size": 40,
         "color": "green"
     },
     "CVE": {
         "caption": "CVE",
         "styles": ["bold"],
-        "size": 25,
+        "size": 40,
         "color": "yellow"
     },
     "Group": {
         "caption": "Group",
         "styles": ["bold"],
-        "size": 25,
+        "size": 35,
         "color": "red"
     },
     "AffectedProduct": {
         "caption": "AffectedProduct",
         "styles": ["bold"],
-        "size": 25,
+        "size": 35,
         "color": "violet"
     },
     "CPE": {
         "caption": "CPE",
         "styles": ["bold"],
-        "size": 15,
+        "size": 35,
         "color": "black"
     },
     "Campaign": {
         "caption": "Campaign",
         "styles": ["bold"],
-        "size": 15,
+        "size": 35,
         "color": "orange"
     },
     "Citation": {
         "caption": "Citation",
         "styles": ["bold"],
-        "size": 10,
+        "size": 35,
         "color": "yellow"
     },
     "IOC": {
         "caption": "IOC",
         "styles": ["bold"],
-        "size": 15,
+        "size": 35,
         "color": "purple"
     },
     "Impact": {
         "caption": "Impact",
         "styles": ["bold"],
-        "size": 15,
+        "size": 35,
         "color": "brown"
     },
     "ProblemType": {
         "caption": "ProblemType",
         "styles": ["bold"],
-        "size": 15,
+        "size": 35,
         "color": "turquise"
     },
     "Software": {
         "caption": "Software",
         "styles": ["bold"],
-        "size": 15,
+        "size": 35,
         "color": "white"
     },
     "Technique": {
         "caption": "Technique",
         "styles": ["bold"],
-        "size": 15,
+        "size": 35,
         "color": "azure"
     },
     "IOC": {
         "caption": "IOC",
         "styles": ["bold"],
-        "size": 15,
+        "size": 35,
         "color": "purple"
     },
     "Vendor": {
         "caption": "Vendor",
         "styles": ["bold"],
-        "size": 15,
+        "size": 35,
         "color": "blue"
     }
 }

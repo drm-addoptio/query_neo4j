@@ -38,7 +38,8 @@ jobs:
           environment: GEN_2
           runtime: python310
           entry_point: main
-          memory: 256M
+          memory: 512M
+          cpu: 2
           service_timeout: 540
           min_instance_count: 1
           max_instance_count: 99

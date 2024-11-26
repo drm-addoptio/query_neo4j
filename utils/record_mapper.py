@@ -11,6 +11,7 @@ def record_mapper(record):
     elements = []
     for key in record.keys():
         element = record.get(key)
+        print(f"Element: {element}")
 
         # Handle nodes
         if element and hasattr(element, 'labels'):
@@ -36,7 +37,7 @@ def record_mapper(record):
             elements.append(node_data)
         
         # Handle relationships
-        elif element and hasattr(element, 'type'):
+        else:
             # Retrieve configuration for the relationship type
             relationship_config = relationship_style_config.get(element.type, {})
 

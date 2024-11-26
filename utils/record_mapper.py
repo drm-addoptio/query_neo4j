@@ -50,17 +50,18 @@ def record_mapper(record):
               start_node = element.nodes[0]  # First node in the tuple
               end_node = element.nodes[1]    # Second node in the tuple
 
-              relationship_type = element.type if hasattr(element, 'type') else "UNKNOWN"
+              # Retrieve configuration for the relationship type
+              relationship_config = relationship_style_config.get(element.type, {})
 
               relationship_data = {
                   "type": "relationship",
-                  "relationshipType": relationship_type,
+                  "relationshipType": element.type,
                   "id": element.element_id,
                   "from": start_node.element_id,
                   "to": end_node.element_id,
                   "captions": [
                       {
-                          "value": "Relationship with type: {}".format(relationship_type),
+                          "value": relationship_config.get("caption", "missing caption"),
                           "styles": ["bold"]
                       }
                   ],

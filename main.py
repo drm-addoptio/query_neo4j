@@ -1,11 +1,13 @@
 import os
 import re
+import time
 import functions_framework
 from neo4j import GraphDatabase
-from neo4j.exceptions import DriverError, Neo4jError
+from neo4j.exceptions import DriverError, Neo4jError, SessionExpired, ServiceUnavailable 
 from flask import jsonify
 from utils.nvl_result_transformer import nvl_result_transformer
 from logging_config import logger
+
 
 # Neo4j configuration
 URI = os.getenv('NEO4J_URI')
@@ -15,6 +17,28 @@ DB = os.getenv('NEO4J_DB')  # Assuming a specific database name if needed
 # Initialize Neo4j driver
 driver = GraphDatabase.driver(uri=URI, auth=AUTH, database=DB)
 
+def execute_neo4j_query(cypher: str, user: str, max_retries=3, retry_delay=2):
+    """
+    Execute a Cypher query with retry logic to handle session expiration or service unavailability.
+    """
+    attempt = 0
+    while attempt < max_retries:
+        try:
+            with driver.session() as session:
+                # Execute the Cypher query
+                result = session.run(cypher, database=DB, impersonated_user=user)
+                return [record for record in result]
+        except (SessionExpired, ServiceUnavailable) as e:
+            # Log the exception and retry
+            logger.warning(f"Attempt {attempt + 1}: Session expired or connection lost: {e}")
+            time.sleep(retry_delay)  # Wait before retrying
+            attempt += 1
+        except (DriverError, Neo4jError) as e:
+            # Handle other errors (e.g., query errors)
+            logger.error(f"Cypher query raised an error: {e}")
+            raise
+    logger.error(f"Max retries reached. Query failed after {max_retries} attempts.")
+    raise ServiceUnavailable(f"Failed to execute query after {max_retries} attempts.")
 
 def generate_neo4j_username(email):
     # Replace special characters with underscores
@@ -129,29 +153,21 @@ def tenant_label_exists(tenant_label):
     """
     Check if the tenant-specific label exists in the database.
     """
-
     query = "CALL db.labels() YIELD label RETURN label"
-    with driver.session() as session:
-      labels = session.run(query)
-      return tenant_label in [record["label"] for record in labels]
+    try:
+        labels = execute_neo4j_query(query, user=None)  # `user=None` for system-level queries
+        return tenant_label in [record["label"] for record in labels]
+    except ServiceUnavailable as e:
+        logger.error(f"Failed to check tenant labels: {e}")
+        return False  # Or raise if it's critical
+
 
 def querykb(cypher: str, user: str) -> list:
     try:
-        # Use the globally initialized driver
-        with driver.session() as session:
-            logger.info(f"Start querying Neo4j with: {cypher}")
-
-            # Execute the Cypher query
-            result = session.run(cypher, database=DB, impersonated_user=user)
-            records = [record for record in result]
-            
-            # Logging the query completion time and results
-            logger.info(f"Query completed. Retrieved {len(records)} records.")
-            #logger.info(f"Results: {records}")
-
-            # Return the records
-            return records
-
-    except (DriverError, Neo4jError) as e:
-        logger.error(f"Cypher query raised an error: {e}")
+        logger.info(f"Start querying Neo4j with: {cypher}")
+        records = execute_neo4j_query(cypher, user)
+        logger.info(f"Query completed. Retrieved {len(records)} records.")
+        return records
+    except ServiceUnavailable as e:
+        logger.error(f"Query execution failed: {e}")
         raise

@@ -1,5 +1,5 @@
 # Import the recordMapper and recordCollector functions
-from utils.record_mapper import record_mapper  # Adjust the import path as needed
+from utils.record_mapper import record_mapper, record_mapper_parallel  # Adjust the import path as needed
 from utils.record_collector import record_collector  # Adjust the import path as needed
 
 def nvl_result_transformer(records):
@@ -8,7 +8,7 @@ def nvl_result_transformer(records):
     # Iterate over each record and extract nodes and relationships
     for record in records:
         # Use the record_mapper to get nodes and relationships
-        elements = record_mapper(record)
+        elements = record_mapper_parallel(record)
         graph_elements.append(elements)
 
 

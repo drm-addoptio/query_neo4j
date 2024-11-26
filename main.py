@@ -78,17 +78,17 @@ def main(request):
 
         # Get the Cypher query from the request body
         request_json = request.get_json()
-        logger.info(f"Request JSON: {request_json}")
+        #logger.info(f"Request JSON: {request_json}")
         cypher_query = request_json.get('query') if request_json else None
         logger.info(f"Cypher Query: {cypher_query}")
 
         # Get the supabase user email from the request header "x-supabase-user"
         user = request.headers.get('x-supabase-user')
-        logger.info(f"User: {user}")
+        #logger.info(f"User: {user}")
 
         # Get the active tenant id from the request header "x-active-tenant-id"
         active_tenant_id = request.headers.get('x-active-tenant-id')
-        logger.info(f"active_tenant_id: {active_tenant_id}")
+        #logger.info(f"active_tenant_id: {active_tenant_id}")
 
         if not cypher_query:
             return jsonify({'error': 'Cypher query is required.'}), 400, headers
@@ -112,7 +112,7 @@ def main(request):
         try:
             result_data = querykb(cypher_query, user)
             nvl_data = nvl_result_transformer(result_data)
-            logger.info(f"Transformed data: {nvl_data}")
+            #logger.info(f"Transformed data: {nvl_data}")
             json_response = jsonify(nvl_data)
             logger.info(f"Response: {json_response}")
             # Return the transformed data
@@ -147,7 +147,7 @@ def querykb(cypher: str, user: str) -> list:
             
             # Logging the query completion time and results
             logger.info(f"Query completed. Retrieved {len(records)} records.")
-            logger.info(f"Results: {records}")
+            #logger.info(f"Results: {records}")
 
             # Return the records
             return records

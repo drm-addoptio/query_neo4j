@@ -20,20 +20,27 @@ def process_key(key, record):
     # Handle nodes
     if hasattr(element, 'labels'):  # It's a node
         labels = list(element.labels)
-        label_config = label_style_config.get(labels[0], {}) if labels else {}
+
+        # Exclude 'allAccess' from the labels
+        filtered_labels = [label for label in labels if label != 'allAccess']
+
+        primary_label = filtered_labels[0] if filtered_labels else "unknown"
+
+        label_config = label_style_config.get(primary_label, {}) if primary_label else {}
 
         return {
             "type": "node",
             "id": element.element_id,
             "captions": [{
-                "value": element.get("classification", labels[0]),
+                "value": element.get("classification", primary_label),
                 "styles": label_config.get("styles", ["bold"])
             }],
             "size": label_config.get("size", 30),
             "color": label_config.get("color", "gray"),
             **{k: convert_to_serializable(v) for k, v in element._properties.items()},
-            "labels": labels,
+            "labels": labels,  # Retain original labels for reference
         }
+
 
     # Handle relationships with nodes
     if hasattr(element, 'nodes') and isinstance(element.nodes, (list, tuple)) and len(element.nodes) == 2:

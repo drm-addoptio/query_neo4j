@@ -9,6 +9,13 @@ def convert_to_serializable(value):
         return value.iso_format()
     return value
 
+# Function to exclude specific properties
+def filter_properties(properties, excluded_keys):
+    """
+    Filters out excluded keys from the properties dictionary.
+    """
+    return {k: v for k, v in properties.items() if k not in excluded_keys}
+
 def process_key(key, record):
     """
     Process a single key in the record to generate node/relationship data.
@@ -16,6 +23,9 @@ def process_key(key, record):
     element = record.get(key)
     if element is None:
         return None
+    
+    # Properties to exclude
+    excluded_properties = {"embedding"}
 
     # Handle nodes
     if hasattr(element, 'labels'):  # It's a node
@@ -37,10 +47,9 @@ def process_key(key, record):
             }],
             "size": label_config.get("size", 30),
             "color": label_config.get("color", "gray"),
-            **{k: convert_to_serializable(v) for k, v in element._properties.items()},
+            **{k: convert_to_serializable(v) for k, v in filter_properties(element._properties, excluded_properties).items()},
             "labels": labels,  # Retain original labels for reference
         }
-
 
     # Handle relationships with nodes
     if hasattr(element, 'nodes') and isinstance(element.nodes, (list, tuple)) and len(element.nodes) == 2:
@@ -58,7 +67,7 @@ def process_key(key, record):
                 "styles": ["bold"]
             }],
             "color": "gray",
-            **{k: convert_to_serializable(v) for k, v in element._properties.items()},
+            **{k: convert_to_serializable(v) for k, v in filter_properties(element._properties, excluded_properties).items()},
         }
 
     # Handle relationships without nodes
@@ -76,7 +85,7 @@ def process_key(key, record):
                 "styles": relationship_config.get("styles", ["bold"])
             }],
             "color": relationship_config.get("color", "gray"),
-            **{k: convert_to_serializable(v) for k, v in element._properties.items()},
+            **{k: convert_to_serializable(v) for k, v in filter_properties(element._properties, excluded_properties).items()},
         }
 
     return None

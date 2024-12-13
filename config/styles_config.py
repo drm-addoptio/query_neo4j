@@ -60,7 +60,7 @@ label_style_config = {
         "caption": "ProblemType",
         "styles": ["bold"],
         "size": 35,
-        "color": "white"
+        "color": "turquoise"
     },
     "Software": {
         "caption": "Software",

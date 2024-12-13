@@ -74,12 +74,6 @@ label_style_config = {
         "size": 35,
         "color": "azure"
     },
-    "IOC": {
-        "caption": "IOC",
-        "styles": ["bold"],
-        "size": 35,
-        "color": "purple"
-    },
     "Vendor": {
         "caption": "Vendor",
         "styles": ["bold"],

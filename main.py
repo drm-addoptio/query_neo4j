@@ -3,7 +3,7 @@ import re
 import time
 import functions_framework
 from neo4j import GraphDatabase
-from neo4j.exceptions import DriverError, Neo4jError, SessionExpired, ServiceUnavailable 
+from neo4j.exceptions import DriverError, Neo4jError, ClientError, SessionExpired, ServiceUnavailable 
 from flask import jsonify
 from utils.nvl_result_transformer import nvl_result_transformer
 from logging_config import logger
@@ -24,16 +24,16 @@ def execute_neo4j_query(cypher: str, user: str, max_retries=3, retry_delay=2):
     attempt = 0
     while attempt < max_retries:
         try:
-            with driver.session() as session:
+            with driver.session(database=DB, impersonated_user=user) as session:
                 # Execute the Cypher query
-                result = session.run(cypher, database=DB, impersonated_user=user)
+                result = session.run(cypher)
                 return [record for record in result]
         except (SessionExpired, ServiceUnavailable) as e:
             # Log the exception and retry
             logger.warning(f"Attempt {attempt + 1}: Session expired or connection lost: {e}")
             time.sleep(retry_delay)  # Wait before retrying
             attempt += 1
-        except (DriverError, Neo4jError) as e:
+        except (DriverError, Neo4jError, ClientError) as e:
             # Handle other errors (e.g., query errors)
             logger.error(f"Cypher query raised an error: {e}")
             raise
@@ -136,14 +136,14 @@ def main(request):
         try:
             result_data = querykb(cypher_query, user)
             nvl_data = nvl_result_transformer(result_data)
-            logger.info(f"Transformed data: {nvl_data}")
+            #logger.info(f"Transformed data: {nvl_data}")
             json_response = jsonify(nvl_data)
-            logger.info(f"Response: {json_response}")
+            #logger.info(f"Response: {json_response}")
             # Return the transformed data
             return jsonify(nvl_data), 200, headers
         except Exception as e:
-            logger.error('Error executing Cypher query:', e)
-            return jsonify({'error': 'Error executing Cypher query.'}), 500, headers
+            logger.error('Error executing Cypher query:', e.message)
+            return jsonify({'error': e.message}), 500, headers
 
     except Exception as e:
         logger.error('Error executing Cypher query or fetching credentials:', e)

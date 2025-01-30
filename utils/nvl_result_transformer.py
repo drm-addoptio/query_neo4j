@@ -15,7 +15,6 @@ def nvl_result_transformer(records, element_limit=1000):
             break  # Stop processing once the limit is reached
 
         # Use the record_mapper_parallel to get nodes and relationships
-        print(f"record:  {record}")
         elements = record_mapper_parallel(record)
 
         # Calculate the remaining capacity for elements
@@ -31,7 +30,6 @@ def nvl_result_transformer(records, element_limit=1000):
 
     # Collect nodes and relationships using the collector function
     collected_data = record_collector(graph_elements)
-
     # Ensure that the result data is in the correct format for NVL
     nodes = collected_data["nodes"]
     relationships = collected_data["relationships"]

@@ -167,7 +167,6 @@ def querykb(cypher: str, user: str) -> list:
         logger.info(f"Start querying Neo4j with: {cypher}")
         records = execute_neo4j_query(cypher, user)
         logger.info(f"Query completed. Retrieved {len(records)} records.")
-        logger.info(f"Records: {records}")
         return records
     except ServiceUnavailable as e:
         logger.error(f"Query execution failed: {e}")

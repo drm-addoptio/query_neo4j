@@ -15,6 +15,7 @@ def nvl_result_transformer(records, element_limit=1000):
             break  # Stop processing once the limit is reached
 
         # Use the record_mapper_parallel to get nodes and relationships
+        print(f"record:  {record}")
         elements = record_mapper_parallel(record)
 
         # Calculate the remaining capacity for elements

@@ -23,7 +23,7 @@ def process_key(key, record):
     element = record.get(key)
     if element is None:
         return None
-    
+    print(f"element: {element}")
     # Properties to exclude
     excluded_properties = {"embedding"}
 
@@ -98,7 +98,7 @@ def record_mapper_parallel(record, num_workers=4):
 
     # Slice the keys to enforce the limit
     keys_to_process = list(record.keys())
-
+    print(f"keys_to_process: {keys_to_process}")
     # Use a thread pool for parallel processing
     with ThreadPoolExecutor(max_workers=num_workers) as executor:
         futures = {executor.submit(process_key, key, record): key for key in keys_to_process}

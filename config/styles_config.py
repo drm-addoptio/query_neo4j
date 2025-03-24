@@ -56,6 +56,12 @@ label_style_config = {
         "size": 35,
         "color": "brown"
     },
+    "Post": {
+        "caption": "Post",
+        "styles": ["bold"],
+        "size": 35,
+        "color": "hotpink"
+    },
     "ProblemType": {
         "caption": "ProblemType",
         "styles": ["bold"],

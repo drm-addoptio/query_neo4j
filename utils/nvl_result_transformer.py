@@ -27,7 +27,7 @@ def nvl_result_transformer(records, element_limit=1000):
         else:
             graph_elements.extend(elements)
             total_elements += len(elements)
-
+    
     # Collect nodes and relationships using the collector function
     collected_data = record_collector(graph_elements)
     # Ensure that the result data is in the correct format for NVL

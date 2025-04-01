@@ -130,11 +130,6 @@ relationship_style_config = {
         "styles": [],
         "color": "black"
     },
-    "METIONS": {
-        "caption": "MENTIONS",
-        "styles": [],
-        "color": "black"
-    },
     "NEW_VERSION": {
         "caption": "NEW_VERSION",
         "styles": [],

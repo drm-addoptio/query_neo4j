@@ -135,10 +135,11 @@ def main(request):
         # Execute the query using the querykb-style approach
         try:
             result_data = querykb(cypher_query, user)
+            #print(f"Result data: {result_data}")
             nvl_data = nvl_result_transformer(result_data)
-            #logger.info(f"Transformed data: {nvl_data}")
-            json_response = jsonify(nvl_data)
-            #logger.info(f"Response: {json_response}")
+            #print(f"Transformed data: {nvl_data}")
+            #json_response = jsonify(nvl_data)
+            #print(f"Response: {json_response.data}")
             # Return the transformed data
             return jsonify(nvl_data), 200, headers
         except Exception as e:

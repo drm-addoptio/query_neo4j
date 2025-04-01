@@ -24,8 +24,9 @@ def process_key(key, record):
     element = record.get(key)
     if element is None:
         return None
+    
     # Properties to exclude
-    excluded_properties = {"embedding"}
+    excluded_properties = {"embedding", "type"}  # Ensure "type" is never overwritten
 
     # Handle paths
     if isinstance(element, Path):  
@@ -66,21 +67,17 @@ def process_key(key, record):
                 "color": "gray",
                 **{k: convert_to_serializable(v) for k, v in filter_properties(relationship._properties, excluded_properties).items()},
             })
-        return path_data  # Return full path structure
+        return path_data
 
     # Handle nodes
-    if hasattr(element, 'labels'):  # It's a node
+    if hasattr(element, 'labels'):
         labels = list(element.labels)
-
-        # Exclude 'allAccess' from the labels
         filtered_labels = [label for label in labels if label != 'allAccess']
-
         primary_label = filtered_labels[0] if filtered_labels else "unknown"
-
         label_config = label_style_config.get(primary_label, {}) if primary_label else {}
-
+        
         return {
-            "type": "node",
+            "type": "node",  # Ensure "type" is always "node"
             "id": element.element_id,
             "captions": [{
                 "value": element.get("classification", primary_label),
@@ -89,7 +86,7 @@ def process_key(key, record):
             "size": label_config.get("size", 30),
             "color": label_config.get("color", "gray"),
             **{k: convert_to_serializable(v) for k, v in filter_properties(element._properties, excluded_properties).items()},
-            "labels": labels,  # Retain original labels for reference
+            "labels": labels,
         }
 
     # Handle relationships with nodes
